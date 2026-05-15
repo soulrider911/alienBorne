@@ -52,6 +52,7 @@ export class AlienShip {
   }
 
   draw(ctx) {
+    ctx.save();
     if (this.flashTimer > 0) {
       ctx.globalAlpha = 0.5 + 0.5 * Math.sin(this.flashTimer * 0.1);
     }
@@ -63,7 +64,7 @@ export class AlienShip {
         ctx.fillRect(Math.floor(this.x + 4 + i * 6), Math.floor(this.y - 4), 4, 2);
       }
     }
-    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 
   getBounds() {

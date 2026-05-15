@@ -49,7 +49,7 @@ export class Mothership {
   }
 
   draw(ctx) {
-    // Warning pulse when low HP (< 30%)
+    ctx.save();
     const lowHp = this.hp / this.maxHp < 0.3;
 
     if (this.flashTimer > 0) {
@@ -60,7 +60,7 @@ export class Mothership {
 
     drawMothership(ctx, Math.floor(this.x), Math.floor(this.y), this.animFrame, false);
 
-    ctx.globalAlpha = 1;
+    ctx.restore();
 
     // HP bar above ship
     const barW = this.width;

@@ -28,6 +28,7 @@ export class Game {
     this.score = 0;
     this.wave = 1;
     this.baseHealth = BASE_HEALTH;
+    this.theme = localStorage.getItem('alienborne_theme') || 'color';
     this.screenShakeMag = 0;
     this.waveClearAnim = false;
     this.waveClearTimer = 0;
@@ -49,7 +50,7 @@ export class Game {
     this.collisionSystem = new CollisionSystem();
     this.particleSystem = new ParticleSystem();
     this.crtEffect = new CRTEffect();
-    this.titleScreen = new TitleScreen();
+    this.titleScreen = new TitleScreen(this.theme);
     this.gameOverScreen = new GameOverScreen();
 
     // Starfield
@@ -65,6 +66,7 @@ export class Game {
   }
 
   start() {
+    this._applyTheme();
     requestAnimationFrame(t => this._tick(t));
   }
 
@@ -94,12 +96,22 @@ export class Game {
   // ─── TITLE ─────────────────────────────────────────────────────────────────
 
   _updateTitle(dt) {
-    this.titleScreen.update(dt);
+    this.titleScreen.update(dt, this.input);
     if (this.input.wasPressed('Space')) {
+      this.theme = this.titleScreen.selectedTheme;
+      localStorage.setItem('alienborne_theme', this.theme);
+      this._applyTheme();
       this._resetGame();
       this.state = 'PLAYING';
     }
     if (this.input.wasPressed('KeyM')) this.audio.toggleMusic();
+  }
+
+  _applyTheme() {
+    const base = 'blur(0.15px) brightness(1.1)';
+    this.canvas.style.filter = this.theme === 'grayscale'
+      ? `grayscale(1) brightness(2) ${base}`
+      : base;
   }
 
   _drawTitle() {
@@ -138,7 +150,8 @@ export class Game {
         // Health drop chance: only when base health < 75%
         // Regular ships: 12% chance. Mothership: 35% chance.
         const healthChance = ship.isMothership ? 0.35 : 0.12;
-        if (this.baseHealth < 75 && Math.random() < healthChance) {
+        const dropAlreadyActive = this.healthDrops.length > 0;
+        if (this.baseHealth < 75 && !dropAlreadyActive && Math.random() < healthChance) {
           this.healthDrops.push(new HealthDrop(dropX, dropY));
         } else {
           this.fallingAliens.push(new FallingAlien(dropX, dropY, this.waveManager.getFallSpeed()));
@@ -246,6 +259,7 @@ export class Game {
     this.particleSystem.draw(ctx);
 
     ctx.restore();
+    ctx.globalAlpha = 1;
 
     // CRT (no shake)
     this.crtEffect.draw(ctx);
@@ -285,16 +299,21 @@ export class Game {
   }
 
   _drawHUD(ctx) {
+    const gray = this.theme === 'grayscale';
+    const hudText  = gray ? '#888888' : PALETTE.white;
+    const hudAccent = gray ? '#aaaaaa' : PALETTE.cyan;
+    const hudBar   = gray ? '#aaaaaa' : null; // null = use normal color logic
+
     ctx.font = "8px 'Press Start 2P', monospace";
     ctx.imageSmoothingEnabled = false;
 
     // Score
-    ctx.fillStyle = PALETTE.white;
+    ctx.fillStyle = hudText;
     ctx.fillText(`SCORE:${this.score.toString().padStart(7, '0')}`, 6, 14);
 
     // Wave
     ctx.textAlign = 'center';
-    ctx.fillStyle = PALETTE.cyan;
+    ctx.fillStyle = hudAccent;
     ctx.fillText(`WAVE ${this.waveManager.wave.toString().padStart(2, '0')}`, CANVAS_WIDTH / 2, 14);
     ctx.textAlign = 'left';
 
@@ -308,23 +327,24 @@ export class Game {
     ctx.fillStyle = '#222';
     ctx.fillRect(barX, barY, barW, barH);
 
-    const barColor = healthPct > 0.6 ? PALETTE.green : healthPct > 0.3 ? PALETTE.yellow : PALETTE.red;
+    const barColor = hudBar || (healthPct > 0.6 ? PALETTE.green : healthPct > 0.3 ? PALETTE.yellow : PALETTE.red);
     ctx.fillStyle = barColor;
     ctx.fillRect(barX, barY, Math.floor(barW * healthPct), barH);
 
-    ctx.fillStyle = PALETTE.white;
+    ctx.fillStyle = hudText;
     ctx.fillRect(barX, barY, barW, 1);
     ctx.fillRect(barX, barY + barH - 1, barW, 1);
     ctx.fillRect(barX, barY, 1, barH);
     ctx.fillRect(barX + barW - 1, barY, 1, barH);
 
     ctx.font = "6px 'Press Start 2P', monospace";
-    ctx.fillStyle = PALETTE.white;
+    ctx.fillStyle = hudText;
     ctx.fillText('BASE', barX, barY + barH + 9);
   }
 
   _drawWaveClear(ctx) {
-    const alpha = Math.min(1, Math.sin((this.waveClearTimer / 3000) * Math.PI));
+    const elapsed = 3000 - this.waveManager.waveClearTimer;
+    const alpha = Math.min(1, Math.sin((elapsed / 3000) * Math.PI));
     ctx.globalAlpha = alpha;
     ctx.textAlign = 'center';
     ctx.font = "16px 'Press Start 2P', monospace";

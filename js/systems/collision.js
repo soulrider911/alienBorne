@@ -20,9 +20,8 @@ export class CollisionSystem {
           if (killed) {
             ship.alive = false;
             game.score += ship.score;
-            game.waveManager.recordKill(!!ship.isMothership);
             if (ship.isMothership) {
-              // Big mothership death: massive shake + multi-burst explosion
+              // Mothership death: massive shake + chain-kill all remaining enemies
               game.addScreenShake(20);
               const cx = ship.x + ship.width / 2;
               const cy = ship.y + ship.height / 2;
@@ -33,6 +32,32 @@ export class CollisionSystem {
               audio.playExplosion(1.0);
               setTimeout(() => audio.playExplosion(0.8), 120);
               setTimeout(() => audio.playExplosion(0.6), 280);
+
+              // Chain explosions: destroy all regular ships and falling aliens
+              let chainDelay = 80;
+              for (const s of ships) {
+                if (!s.alive || s.isMothership) continue;
+                s.alive = false;
+                game.score += s.score;
+                const scx = s.x + s.width / 2;
+                const scy = s.y + s.height / 2;
+                setTimeout(() => {
+                  particleSystem.emitExplosion(scx, scy, 'large', '#00FF41');
+                  audio.playExplosion(0.5);
+                }, chainDelay);
+                chainDelay += 120;
+              }
+              for (const a of fallingAliens) {
+                if (!a.alive) continue;
+                a.alive = false;
+                game.score += a.score;
+                const ax = a.x + 8;
+                const ay = a.y + 6;
+                setTimeout(() => {
+                  particleSystem.emitExplosion(ax, ay, 'small', '#FF00FF');
+                }, chainDelay);
+                chainDelay += 60;
+              }
             } else {
               game.addScreenShake(6);
               particleSystem.emitExplosion(ship.x + 16, ship.y + 5, 'large', '#00FF41');
