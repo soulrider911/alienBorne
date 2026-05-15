@@ -1,5 +1,7 @@
 # ALIENBORNE
 
+![Alienborne](thumbnail.png)
+
 A retro arcade alien invasion game for the browser, inspired by the classic Apple II game *Airborne!*
 
 **"1982 arcade cabinet meets alien invasion."**
