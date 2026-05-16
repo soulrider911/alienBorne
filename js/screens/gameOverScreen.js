@@ -14,6 +14,7 @@ export class GameOverScreen {
     this.inputDelay = 2000;
     this.blinkTimer = 0;
     this.finalScore = score;
+    this.promptInitials = false;
     this.hiScore = parseInt(localStorage.getItem('alienborne_hiscore') || '0');
     if (score > this.hiScore) {
       this.hiScore = score;
@@ -65,11 +66,12 @@ export class GameOverScreen {
       ctx.fillText('** NEW HIGH SCORE! **', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 46);
     }
 
-    // Restart prompt
+    // Continue prompt
     if (this.inputDelay <= 0 && this.blinkOn) {
       ctx.font = "9px 'Press Start 2P', monospace";
       ctx.fillStyle = PALETTE.white;
-      ctx.fillText('PRESS SPACE TO PLAY AGAIN', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 72);
+      const prompt = this.promptInitials ? 'SPACE: ENTER INITIALS' : 'SPACE: LEADERBOARD';
+      ctx.fillText(prompt, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 72);
     }
 
     ctx.textAlign = 'left';

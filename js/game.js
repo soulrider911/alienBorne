@@ -11,6 +11,9 @@ import { ParticleSystem } from './systems/particleSystem.js';
 import { CRTEffect } from './systems/crtEffect.js';
 import { TitleScreen } from './screens/titleScreen.js';
 import { GameOverScreen } from './screens/gameOverScreen.js';
+import { InitialsScreen } from './screens/initialsScreen.js';
+import { LeaderboardScreen } from './screens/leaderboardScreen.js';
+import { fetchLeaderboard } from './services/highscores.js';
 import { drawLandedAlien } from './sprites.js';
 
 export class Game {
@@ -52,6 +55,9 @@ export class Game {
     this.crtEffect = new CRTEffect();
     this.titleScreen = new TitleScreen(this.theme);
     this.gameOverScreen = new GameOverScreen();
+    this.initialsScreen = new InitialsScreen();
+    this.leaderboardScreen = new LeaderboardScreen();
+    this._leaderboardCache = null;
 
     // Starfield
     this.stars = Array.from({ length: 80 }, () => ({
@@ -82,9 +88,11 @@ export class Game {
     }
 
     switch (this.state) {
-      case 'TITLE':    this._updateTitle(dt);    this._drawTitle();    break;
-      case 'PLAYING':  this._updatePlaying(dt);  this._drawPlaying();  break;
-      case 'GAME_OVER':this._updateGameOver(dt); this._drawGameOver(); break;
+      case 'TITLE':       this._updateTitle(dt);       this._drawTitle();       break;
+      case 'PLAYING':     this._updatePlaying(dt);     this._drawPlaying();     break;
+      case 'GAME_OVER':   this._updateGameOver(dt);    this._drawGameOver();    break;
+      case 'INITIALS':    this._updateInitials(dt);    this._drawInitials();    break;
+      case 'LEADERBOARD': this._updateLeaderboard(dt); this._drawLeaderboard(); break;
     }
 
     // Clear single-frame input state AFTER all update logic has read it
@@ -362,7 +370,19 @@ export class Game {
   _updateGameOver(dt) {
     this.gameOverScreen.update(dt);
     if (this.gameOverScreen.canAcceptInput() && this.input.wasPressed('Space')) {
-      this.state = 'TITLE';
+      if (this.gameOverScreen.promptInitials) {
+        this.gameOverScreen.promptInitials = false;
+        this.initialsScreen.init(this.score, (initials, err) => {
+          this._leaderboardCache = null;
+          this._pendingHighlight = initials ? { initials, score: this.score } : null;
+          this.leaderboardScreen.init(null, this._pendingHighlight);
+          this.state = 'LEADERBOARD';
+        });
+        this.state = 'INITIALS';
+      } else {
+        this.leaderboardScreen.init(null, null);
+        this.state = 'LEADERBOARD';
+      }
     }
     if (this.input.wasPressed('KeyM')) this.audio.toggleMusic();
   }
@@ -379,6 +399,32 @@ export class Game {
     this.gameOverScreen.draw(ctx);
   }
 
+  // ─── INITIALS ──────────────────────────────────────────────────────────────
+
+  _updateInitials(dt) {
+    this.initialsScreen.update(dt, this.input);
+  }
+
+  _drawInitials() {
+    this._drawGameOver();
+    this.initialsScreen.draw(this.ctx);
+  }
+
+  // ─── LEADERBOARD ───────────────────────────────────────────────────────────
+
+  _updateLeaderboard(dt) {
+    this.leaderboardScreen.update(dt);
+    if (this.leaderboardScreen.canAcceptInput() && this.input.wasPressed('Space')) {
+      this.state = 'TITLE';
+    }
+    if (this.input.wasPressed('KeyM')) this.audio.toggleMusic();
+  }
+
+  _drawLeaderboard() {
+    this.leaderboardScreen.draw(this.ctx);
+    this.crtEffect.draw(this.ctx);
+  }
+
   // ─── HELPERS ───────────────────────────────────────────────────────────────
 
   addScreenShake(mag) {
@@ -389,10 +435,19 @@ export class Game {
     if (this.gameOverPending) return;
     this.gameOverPending = true;
     this.audio.stopMusic();
-    // Brief delay then transition
     setTimeout(() => {
-      this.gameOverScreen.init(this.score);
+      const finalScore = this.score;
+      this.gameOverScreen.init(finalScore);
       this.state = 'GAME_OVER';
+      if (finalScore > 0) {
+        fetchLeaderboard().then(entries => {
+          const qualifies = entries.length < 10 || finalScore > entries[entries.length - 1].score;
+          this.gameOverScreen.promptInitials = qualifies;
+          this._leaderboardCache = entries;
+        }).catch(() => {
+          this.gameOverScreen.promptInitials = true;
+        });
+      }
     }, 800);
   }
 
