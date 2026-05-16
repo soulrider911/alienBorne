@@ -1,11 +1,17 @@
 import { CANVAS_WIDTH, CANVAS_HEIGHT, PALETTE } from '../constants.js';
 import { drawUFO } from '../sprites.js';
+import { fetchLeaderboard } from '../services/highscores.js';
 
 export class TitleScreen {
   constructor(savedTheme = 'color') {
     this.blinkTimer = 0;
     this.blinkOn = true;
     this.selectedTheme = savedTheme;
+    this.topScores = null;
+
+    fetchLeaderboard().then(entries => {
+      this.topScores = entries.slice(0, 3);
+    }).catch(() => {});
 
     this.attractShips = [
       { x: -40, y: 60,  vx: 55,  animFrame: 0, animTimer: 0 },
@@ -156,11 +162,32 @@ export class TitleScreen {
       ctx.fillText('PRESS SPACE TO START', CANVAS_WIDTH / 2, 210);
     }
 
-    // Hi-score
-    const hi = localStorage.getItem('alienborne_hiscore') || '0';
-    ctx.font = "8px 'Press Start 2P', monospace";
+    // Top 3 global scores
+    ctx.font = "6px 'Press Start 2P', monospace";
     ctx.fillStyle = PALETTE.yellow;
-    ctx.fillText(`HI-SCORE: ${hi.toString().padStart(7, '0')}`, CANVAS_WIDTH / 2, 228);
+    ctx.fillText('TOP SCORES', CANVAS_WIDTH / 2, 228);
+
+    if (this.topScores === null) {
+      ctx.font = "6px 'Press Start 2P', monospace";
+      ctx.fillStyle = '#555555';
+      ctx.fillText('LOADING...', CANVAS_WIDTH / 2, 244);
+    } else if (this.topScores.length === 0) {
+      ctx.font = "6px 'Press Start 2P', monospace";
+      ctx.fillStyle = '#555555';
+      ctx.fillText('NO SCORES YET', CANVAS_WIDTH / 2, 244);
+    } else {
+      const rankColors = [PALETTE.yellow, '#C0C0C0', '#CD7F32'];
+      for (let i = 0; i < this.topScores.length; i++) {
+        const e = this.topScores[i];
+        const y = 244 + i * 14;
+        ctx.font = "7px 'Press Start 2P', monospace";
+        ctx.fillStyle = rankColors[i] || PALETTE.white;
+        ctx.fillText(
+          `${i + 1}. ${e.initials}  ${String(e.score).padStart(7, '0')}`,
+          CANVAS_WIDTH / 2, y
+        );
+      }
+    }
 
     // Copyright
     ctx.font = "6px 'Press Start 2P', monospace";

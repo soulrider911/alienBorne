@@ -415,6 +415,8 @@ export class Game {
   _updateLeaderboard(dt) {
     this.leaderboardScreen.update(dt);
     if (this.leaderboardScreen.canAcceptInput() && this.input.wasPressed('Space')) {
+      this.titleScreen.topScores = null;
+      fetchLeaderboard().then(entries => { this.titleScreen.topScores = entries.slice(0, 3); }).catch(() => { this.titleScreen.topScores = []; });
       this.state = 'TITLE';
     }
     if (this.input.wasPressed('KeyM')) this.audio.toggleMusic();
