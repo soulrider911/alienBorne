@@ -101,7 +101,7 @@ export class LeaderboardScreen {
             ctx.fillRect(100, y - rowH + 4, 1, rowH);
           }
 
-          const rank = '#' + String(i + 1).padStart(2, '0');
+          const rank = String(i + 1).padStart(2, '0');
           ctx.font = "7px 'Press Start 2P', monospace";
           ctx.fillStyle = color;
           ctx.textAlign = 'right';
