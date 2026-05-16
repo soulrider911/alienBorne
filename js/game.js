@@ -440,13 +440,12 @@ export class Game {
       this.gameOverScreen.init(finalScore);
       this.state = 'GAME_OVER';
       if (finalScore > 0) {
+        this.gameOverScreen.promptInitials = true;
         fetchLeaderboard().then(entries => {
           const qualifies = entries.length < 10 || finalScore > entries[entries.length - 1].score;
           this.gameOverScreen.promptInitials = qualifies;
           this._leaderboardCache = entries;
-        }).catch(() => {
-          this.gameOverScreen.promptInitials = true;
-        });
+        }).catch(() => {});
       }
     }, 800);
   }
