@@ -53,25 +53,21 @@ A new wave begins after the Mothership is dealt with and the field clears. A 3-s
 | Destroy Mothership | 500 + (HP × 100) |
 | Wave clear bonus | 500 × wave number |
 
-Hi-score is saved automatically in `localStorage`.
+Scores are submitted to a global online leaderboard. The top 3 scores are shown on the title screen. After game over, players enter 3-character arcade initials to save their score.
 
 ---
 
 ## Running Locally
 
-No build step required. Serve the project root over HTTP and open `index.html`:
+The project requires the [Vercel CLI](https://vercel.com/docs/cli) to run locally so the API function and environment variables work correctly.
 
 ```bash
-# Python
-python3 -m http.server 8000
-
-# Node
-npx serve .
+npm install -g vercel
+vercel link       # connect to your Vercel project (one-time)
+vercel env pull   # pull environment variables
+npm install       # install @supabase/supabase-js
+vercel dev        # starts at http://localhost:3000
 ```
-
-Then open `http://localhost:8000` in any modern browser.
-
-> **Note:** the game uses ES modules, so it must be served over HTTP — opening `index.html` directly via `file://` will not work in most browsers.
 
 ---
 
@@ -80,6 +76,9 @@ Then open `http://localhost:8000` in any modern browser.
 ```
 alienborne/
 ├── index.html
+├── package.json
+├── api/
+│   └── highscores.js       # Vercel Function — GET/POST leaderboard
 ├── css/
 │   └── style.css           # Canvas centering, CRT filter
 └── js/
@@ -89,6 +88,8 @@ alienborne/
     ├── input.js             # Keyboard state
     ├── audio.js             # Web Audio API sound synthesis
     ├── sprites.js           # Pixel art drawn with fillRect
+    ├── services/
+    │   └── highscores.js    # Fetch wrapper for /api/highscores
     ├── entities/
     │   ├── cannon.js
     │   ├── bullet.js
@@ -103,7 +104,9 @@ alienborne/
     │   └── crtEffect.js     # Scanlines & vignette
     └── screens/
         ├── titleScreen.js
-        └── gameOverScreen.js
+        ├── gameOverScreen.js
+        ├── initialsScreen.js  # 3-char arcade initials entry
+        └── leaderboardScreen.js
 ```
 
 ---
@@ -113,4 +116,4 @@ alienborne/
 - Pure HTML5 Canvas + Vanilla JavaScript (ES modules)
 - All sprites drawn programmatically with `fillRect` — no image files
 - All audio synthesized with the Web Audio API — no audio files
-- No external libraries or build tools
+- Online leaderboard via [Vercel Functions](https://vercel.com/docs/functions) + [Supabase](https://supabase.com)
