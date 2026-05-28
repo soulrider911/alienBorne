@@ -24,6 +24,16 @@ export class Cannon {
     this.flashTimer = 80;
   }
 
+  getBarrelTip() {
+    // Barrel rotates from pivot at (x, y - 6), extends 18 pixels upward
+    const rad = (this.angle * Math.PI) / 180;
+    const barrelLength = 18;
+    return {
+      x: this.x + Math.sin(rad) * barrelLength,
+      y: (this.y - 6) - Math.cos(rad) * barrelLength
+    };
+  }
+
   draw(ctx) {
     const rad = (this.angle * Math.PI) / 180;
     const px = this.x, py = this.y;

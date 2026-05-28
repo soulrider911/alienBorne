@@ -24,6 +24,6 @@ export class Bullet {
   }
 
   getBounds() {
-    return { x: this.x - 1, y: this.y - 3, w: 2, h: 6 };
+    return { x: this.x - 2, y: this.y - 2, w: 4, h: 4 };
   }
 }

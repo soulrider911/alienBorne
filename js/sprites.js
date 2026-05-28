@@ -99,7 +99,7 @@ export function drawLandedAlien(ctx, x, y) {
 
 export function drawBullet(ctx, x, y) {
   ctx.fillStyle = '#00FFFF';
-  ctx.fillRect(Math.floor(x - 1), Math.floor(y - 3), 2, 6);
+  ctx.fillRect(Math.floor(x - 2), Math.floor(y - 2), 4, 4);
 }
 
 // Mothership: 28 cols × 9 rows, scale=2 → 56×18px

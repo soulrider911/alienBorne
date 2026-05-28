@@ -24,6 +24,10 @@ export class Game {
     this.ctx = this.canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
 
+    // Integer scaling for crisp pixel art
+    this._updateCanvasScale();
+    window.addEventListener('resize', () => this._updateCanvasScale());
+
     this.state = 'TITLE';
     this.lastTime = 0;
 
@@ -116,9 +120,9 @@ export class Game {
   }
 
   _applyTheme() {
-    const base = 'blur(0.15px) brightness(1.1)';
+    const base = 'brightness(1.1)';
     this.canvas.style.filter = this.theme === 'grayscale'
-      ? `grayscale(1) brightness(2) ${base}`
+      ? `grayscale(1) brightness(2)`
       : base;
   }
 
@@ -141,7 +145,8 @@ export class Game {
     // Fire
     if ((this.input.isDown('Space') || this.input.wasPressed('Space')) && this.cannon.canFire()) {
       this.cannon.fire();
-      this.bullets.push(new Bullet(this.cannon.x, this.cannon.y - 24, this.cannon.angle));
+      const tip = this.cannon.getBarrelTip();
+      this.bullets.push(new Bullet(tip.x, tip.y, this.cannon.angle));
       this.audio.playShot();
     }
 
@@ -469,5 +474,15 @@ export class Game {
     this.waveManager = new WaveManager();
     this.particleSystem = new ParticleSystem();
     this.audio.stopMusic();
+  }
+
+  _updateCanvasScale() {
+    // Calculate the largest integer scale that fits the viewport
+    const scaleX = Math.floor(window.innerWidth / CANVAS_WIDTH);
+    const scaleY = Math.floor(window.innerHeight / CANVAS_HEIGHT);
+    const scale = Math.max(1, Math.min(scaleX, scaleY));
+
+    // Set CSS variable for scaling
+    this.canvas.style.setProperty('--scale', scale);
   }
 }
